@@ -8,28 +8,81 @@
 
 Schedular* schedular;
 
+void exit_system_error(std::string msg) {
+    std::cerr << "system error: " << msg << std::endl;
+    exit(1);
+}
+
 void endTurn(int sig) {
-    std::cout << "reached 1" << std::endl;
-    schedular->switchTurn(true);
+    schedular->switchTurn();
 }
 
 int uthread_init(int quantum_usecs) {
+    if (quantum_usecs <= 0) {
+        return -1;
+    }
     /*init of schedular, creating main thread and adding to queue*/
-    schedular = new Schedular(MAX_THREAD_NUM, STACK_SIZE, quantum_usecs, &endTurn);
-    schedular->createThread(0);
+    try {
+        schedular = new Schedular(MAX_THREAD_NUM, STACK_SIZE, quantum_usecs, &endTurn);
+        schedular->createThread(0);
+    }
+    catch (std::bad_alloc&) {
+        exit_system_error("memory allocation failure");
+    }
+    
     return 0;
 }
 
 int uthread_spawn(thread_entry_point entry_point) {
-    return schedular->uthreadSpawn(entry_point);
+    int ret = -1;
+    try {
+        ret = schedular->uthreadSpawn(entry_point);
+    }
+    catch (std::bad_alloc&) {
+        exit_system_error("memory allocation failure");
+    }
+    return ret;
 }
+
+int uthread_block(int tid) {
+    int ret = -1;
+    try {
+        ret = schedular->blockThread(tid);
+    }
+    catch (std::bad_alloc&) {
+        exit_system_error("memory allocation failure");
+    }
+    return ret;
+}
+
+int uthread_resume(int tid) {
+    return schedular->resumeThread(tid);
+}
+
+
+int uthread_get_total_quantums() {
+    return schedular->getTotalQuantum();
+}
+
+
+int uthread_sleep(int num_quantums) {
+    int ret = -1;
+    try {
+        ret = schedular->threadSleep(num_quantums);
+    }
+    catch (std::bad_alloc&) {
+        exit_system_error("memory allocation failure");
+    }
+    return ret;
+}
+
 
 void test1() {
     // for (;;) {
     //     usleep(SECOND);
     //     std::cout << "test 1" << std::endl;
     // }
-    for (int i = 0; i > -1; i++) {
+    for (int i = 0; i < 5000000 * 90; i++) {
         if (i % 5000000 == 0) {
             std::cout << "test 1" << std::endl;
         }
@@ -41,9 +94,15 @@ void test2() {
     //     usleep(SECOND);
     //     std::cout << "test 2" << std::endl;
     // }
-    for (int i = 0; i > -1; i++) {
+    for (int i = 0; i < 5000000 * 90; i++) {
         if (i % 5000000 == 0) {
             std::cout << "test 2" << std::endl;
+        }
+        if (i == 5000000 * 60) {
+            std::cout << "----------------------------------------------------------------------------------" << std::endl;
+            std::cout << "blocked " << uthread_block(1);
+            std::cout << "----------------------------------------------------------------------------------" << std::endl;
+            std::cout << "resumed " << uthread_resume(1);            
         }
     }
 }
@@ -52,7 +111,7 @@ void test2() {
 int main(int argc, char const *argv[])
 {
     /* code */
-    uthread_init(500000);
+    uthread_init(50000);
     uthread_spawn(test1);
     test2();
     // // test2();

@@ -1,5 +1,8 @@
 #include "thread.h"
 #include <signal.h>
+#include <cassert>
+
+
 
 #ifdef __x86_64__
 /* code for 64 bit Intel arch */
@@ -45,8 +48,11 @@ address_t translate_address(address_t addr)
 
 
 Thread::Thread(int id, int stackSize, thread_entry_point enteryPoint): 
-    id(id), quantomCount(0), state(READY)
-{
+    id(id), quantomCount(0) {
+    setReady(false);
+    setRunning(false);
+    setSleeping(false);
+    setBlocked(false);
     sigsetjmp(env, 1);
     if (id != 0) {
         stack = new char[stackSize];
@@ -58,5 +64,43 @@ Thread::Thread(int id, int stackSize, thread_entry_point enteryPoint):
     else {
         stack = nullptr;
     }
-    sigemptyset(&env->__saved_mask);
+    if (sigemptyset(&env->__saved_mask) == -1) {
+        exit_errno();
+    };
 }
+
+
+    void Thread::setReady(bool state) {
+        ready = state;
+        verifyStates();
+    }
+
+    void Thread::setRunning(bool state) {
+        running = state;
+        verifyStates();
+    }
+
+
+    void Thread::setSleeping(bool state) {
+        sleeping = state;
+        verifyStates();
+    }
+
+
+    void Thread::setBlocked(bool state) {
+        blocked = state;
+        verifyStates();
+    }
+
+
+    void Thread::verifyStates() {
+        assert(!(ready && (running || blocked || sleeping)));
+        assert(!(blocked && id == 0));
+    }
+
+    bool Thread::getReady() {return ready;};
+    bool Thread::getRunning() {return running;};
+    bool Thread::getSleeping() {return sleeping;};
+    bool Thread::getBlocked() {return blocked;};
+
+
