@@ -44,15 +44,19 @@ address_t translate_address(address_t addr)
 #endif
 
 
-Thread::Thread(int id, int stackSize, char *stack, thread_entry_point enteryPoint): 
+Thread::Thread(int id, int stackSize, thread_entry_point enteryPoint): 
     id(id), quantomCount(0), state(READY)
 {
-    sigsetjmp(env, id);
+    sigsetjmp(env, 1);
     if (id != 0) {
+        stack = new char[stackSize];
         address_t sp = (address_t) stack + stackSize - sizeof(address_t);
         address_t pc = (address_t) enteryPoint;
         (env->__jmpbuf)[JB_SP] = translate_address(sp);
         (env->__jmpbuf)[JB_PC] = translate_address(pc);
+    }
+    else {
+        stack = nullptr;
     }
     sigemptyset(&env->__saved_mask);
 }
