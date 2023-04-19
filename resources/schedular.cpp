@@ -1,6 +1,7 @@
 #include "schedular.h"
 #include <cassert>
 
+std::string LIBRARY_ERROR_MSG = "thread library error: ";
 
 Schedular::Schedular(int maxThreads, int stackSize, int quantum_usecs, timer_end_func turnEnd_): 
     stackSize(stackSize), 
@@ -32,7 +33,12 @@ void Schedular::createThread(int id, thread_entry_point entry_point) {
 
 
 int Schedular::uthreadSpawn(thread_entry_point entry_point) {
-    if (available_tid.empty() || entry_point == nullptr) {
+    if (available_tid.empty()) {
+        std::cerr << LIBRARY_ERROR_MSG << "reached max threads" << std::endl;
+        return -1;
+    }
+    if (entry_point == nullptr) {
+        std::cerr << LIBRARY_ERROR_MSG << "invalid entry point" << std::endl;
         return -1;
     }
     int new_tid = available_tid.top();
@@ -95,7 +101,12 @@ void Schedular::checkWakeUp() {
 
 
 int Schedular::blockThread(int tid) {
-    if (tid == 0 || !threads.count(tid)) {
+    if (tid == 0) {
+        std::cerr << LIBRARY_ERROR_MSG << "cant block main thread" << std::endl;
+        return -1;
+    }
+    if (!threads.count(tid)) {
+        std::cerr << LIBRARY_ERROR_MSG << "tid not found" << std::endl;
         return -1;
     }
     Thread *thread = threads[tid];
@@ -112,6 +123,7 @@ int Schedular::blockThread(int tid) {
 
 int Schedular::resumeThread(int tid) {
     if (!threads.count(tid)) {
+        std::cerr << LIBRARY_ERROR_MSG << "tid not found" << std::endl;
         return -1;
     }
     Thread *thread = threads[tid];
@@ -160,7 +172,12 @@ int Schedular::getTotalQuantum() {
 
 
 int Schedular::threadSleep(int num_quantums) {
-    if (currentThread->id == 0 || num_quantums <= 0) {
+    if (currentThread->id == 0) {
+        std::cerr << LIBRARY_ERROR_MSG << "cant sleep if main thread" << std::endl;
+        return -1;
+    }
+    if (num_quantums <= 0) {
+        std::cerr << LIBRARY_ERROR_MSG << "non positive num_quantums" << std::endl;
         return -1;
     }
     currentThread->setSleeping(true);
@@ -178,6 +195,7 @@ int Schedular::threadSleep(int num_quantums) {
 
 int Schedular::get_quantums(int tid) {
     if (!threads.count(tid)){
+        std::cerr << LIBRARY_ERROR_MSG << "tid not found" << std::endl;
         return -1;
     }
     Thread* t = threads[tid];
@@ -218,6 +236,7 @@ int Schedular::terminateThread(int tid) {
 
 int Schedular::deleteThread(int tid) {
     if (!threads.count(tid)) {
+        std::cerr << LIBRARY_ERROR_MSG << "tid not found" << std::endl;
         return -1;
     }
     Thread *thread = threads[tid];

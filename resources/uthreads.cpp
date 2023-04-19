@@ -36,19 +36,24 @@ void unblockTimer() {
 
 int uthread_init(int quantum_usecs) {
     blockTimer();
+    int ret = -1;
     if (quantum_usecs <= 0) {
-        return -1;
+        std::cerr << "quantum_usecs must be positive" << std::endl;
+        ret = -1;
     }
-    /*init of schedular, creating main thread and adding to queue*/
-    try {
-        schedular = new Schedular(MAX_THREAD_NUM, STACK_SIZE, quantum_usecs, &endTurn);
-        schedular->createThread(0);
+    else {
+        /*init of schedular, creating main thread and adding to queue*/
+        try {
+            schedular = new Schedular(MAX_THREAD_NUM, STACK_SIZE, quantum_usecs, &endTurn);
+            schedular->createThread(0);
+        }
+        catch (std::bad_alloc&) {
+            exit_system_error("memory allocation failure");
+        } 
+        ret = 0;
     }
-    catch (std::bad_alloc&) {
-        exit_system_error("memory allocation failure");
-    } 
     unblockTimer();
-    return 0;
+    return ret;
 }
 
 int uthread_spawn(thread_entry_point entry_point) {
