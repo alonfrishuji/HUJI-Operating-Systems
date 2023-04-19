@@ -77,32 +77,85 @@ int uthread_sleep(int num_quantums) {
 }
 
 
+int uthread_get_quantums(int tid){
+    int ret = -1;
+    ret = schedular->get_quantums(tid);
+    return ret;
+}
+
+
+int uthread_get_tid(){
+    return schedular->getCurrentThread()->id;
+}
+
+
+int uthread_terminate(int tid) {
+    int ret = schedular->terminateThread(tid);
+    if (tid == 0) {
+        delete schedular;
+        exit(0);
+    }
+    return ret;
+}
+
+
 void test1() {
-    // for (;;) {
-    //     usleep(SECOND);
-    //     std::cout << "test 1" << std::endl;
-    // }
-    for (int i = 0; i < 5000000 * 90; i++) {
-        if (i % 5000000 == 0) {
-            std::cout << "test 1" << std::endl;
+    int lastQuantum = 0;
+    bool slept = false;
+    bool terminate = false;
+    for (int i = 0; i < 5000000 * 30; i++) {
+        int curQuantum = uthread_get_quantums(uthread_get_tid());
+        if (curQuantum > lastQuantum) {
+            std::cout << "test 1 quantum: " << curQuantum << " , total quantum: " << uthread_get_total_quantums() << std::endl;
+            lastQuantum = curQuantum;
+        }
+        // if (curQuantum == 12 && !slept) {
+        //     slept == true;
+        //     std::cout << "----------------------------------start sleeping 1--------------------------" << std::endl;
+        //     uthread_sleep(20);
+        //     std::cout << "----------------------------------end sleeping 1--------------------------" << uthread_resume(1);            
+        // }        
+    }
+}
+
+
+void test2() {
+    bool slept = false;
+    int lastQuantum = 0;
+    bool terminate = false;
+    for (int i = 0; i < 5000000 * 30; i++) {
+        int curQuantum = uthread_get_quantums(uthread_get_tid());
+        if (curQuantum > lastQuantum) {
+            std::cout << "test 2 quantum: " << curQuantum << " , total quantum: " << uthread_get_total_quantums() << std::endl;
+            lastQuantum = curQuantum;
+        }   
+        if (curQuantum == 12 && !slept) {
+            slept == true;
+            std::cout << "----------------------------------start sleeping 2--------------------------" << std::endl;
+            uthread_sleep(19);
+            std::cout << "----------------------------------end sleeping 2--------------------------" << uthread_resume(1);            
         }
     }
 }
 
-void test2() {
-    // for (;;) {
-    //     usleep(SECOND);
-    //     std::cout << "test 2" << std::endl;
-    // }
-    for (int i = 0; i < 5000000 * 90; i++) {
-        if (i % 5000000 == 0) {
-            std::cout << "test 2" << std::endl;
+
+void test0() {
+    int lastQuantum = 0;
+    bool terminate = false;
+    for (int i = 0; i < 5000000 * 30; i++) {
+        int curQuantum = uthread_get_quantums(uthread_get_tid());
+        if (curQuantum > lastQuantum) {
+            std::cout << "test 0 quantum: " << curQuantum << " , total quantum: " << uthread_get_total_quantums() << std::endl;
+            lastQuantum = curQuantum;
+        }       
+        if (lastQuantum >= 45) {
+        exit(0);
         }
-        if (i == 5000000 * 60) {
-            std::cout << "----------------------------------------------------------------------------------" << std::endl;
-            std::cout << "blocked " << uthread_block(1);
-            std::cout << "----------------------------------------------------------------------------------" << std::endl;
-            std::cout << "resumed " << uthread_resume(1);            
+        if (lastQuantum == 18 && !terminate) {
+            std::cout << "-------------------- terminate 0 from 1" << "-------------------" << std::endl;
+            terminate = true;
+            uthread_terminate(1);
+            uthread_spawn(test1);
         }
     }
 }
@@ -113,7 +166,10 @@ int main(int argc, char const *argv[])
     /* code */
     uthread_init(50000);
     uthread_spawn(test1);
-    test2();
+    uthread_spawn(test2);
+    // uthread_spawn(test2);
+    // uthread_spawn(test3);
+    test0();
     // // test2();
     // // return 0;
     // struct itimerval timer;

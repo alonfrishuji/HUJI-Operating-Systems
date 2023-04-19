@@ -12,6 +12,7 @@ class Thread {
     sigjmp_buf env;
 
     Thread(int id, int stackSize, thread_entry_point entry_point = nullptr);
+    ~Thread();
     void setReady(bool state);
     void setRunning(bool state);
     void setSleeping(bool state);
@@ -20,6 +21,7 @@ class Thread {
     bool getRunning();
     bool getSleeping();
     bool getBlocked();
+    int wakeUpTurn;
 
     private:
     bool ready;

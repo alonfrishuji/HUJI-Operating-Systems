@@ -27,6 +27,8 @@ class Schedular {
     int resumeThread(int tid);
     int getTotalQuantum();
     int threadSleep(int num_quantums);
+    int get_quantums(int tid);
+    int terminateThread(int tid);
 
 
     private:
@@ -40,9 +42,17 @@ class Schedular {
     Thread *currentThread;
     std::priority_queue<int, std::vector<int>, std::greater<int>> available_tid;
     struct itimerval timer;
-    void startTurn();
+    bool deleteMode;
+    int tidToDelete;
+
+    void startTurn(bool shouldJump);
     void removeFromReady(Thread *threadToRemove);
     void checkWakeUp();
     void addToReady(Thread *thread);
     Thread* popFromReady();
+    int deleteThread(int tid);
+    void deleteSleeping(Thread *thread);
+    void terminateAllThreads();
+    void deleteSelf(int tid);
+    void deleteByMain();
 };

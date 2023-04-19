@@ -1,10 +1,14 @@
 #include "schedular.h"
+#include <cassert>
 
 
 Schedular::Schedular(int maxThreads, int stackSize, int quantum_usecs, timer_end_func turnEnd_): 
     stackSize(stackSize), 
     quantum_usecs(quantum_usecs),
-    totalQuantum(0) {
+    totalQuantum(0),
+    deleteMode(false),
+    tidToDelete(-1)
+    {
     readyQueue = new std::queue<Thread*>();
     for (int i=1; i < maxThreads; i++) {
         available_tid.push(i);
@@ -22,7 +26,7 @@ void Schedular::createThread(int id, thread_entry_point entry_point) {
     threads[id] = thread;
     addToReady(thread);
     if (id == 0) {
-        startTurn();
+        startTurn(false);
     }
 }
 
@@ -39,28 +43,38 @@ int Schedular::uthreadSpawn(thread_entry_point entry_point) {
 
 
 void Schedular::switchTurn() {
-    currentThread->setRunning(false);
-    if (!currentThread->getBlocked() && !currentThread->getSleeping()) {
-        addToReady(currentThread);
+    bool did_just_save_bookmark = false;
+    if (currentThread != nullptr) {
+        currentThread->setRunning(false);
+        if (!currentThread->getBlocked() && !currentThread->getSleeping()) {
+            addToReady(currentThread);
+        }
+        int ret_val = sigsetjmp(currentThread->env, 1);
+        did_just_save_bookmark = ret_val == 0;
     }
-    int ret_val = sigsetjmp(currentThread->env, 1);
-    bool did_just_save_bookmark = ret_val == 0;
-    if (did_just_save_bookmark) {
-        startTurn();
-        siglongjmp(currentThread->env, 1);
+    if (deleteMode) {
+        assert(!did_just_save_bookmark);
+        deleteByMain();
+    }
+    if (did_just_save_bookmark || currentThread == nullptr) {
+        startTurn(true);
     }
 }
 
 
-void Schedular::startTurn() {
+void Schedular::startTurn(bool shouldJump) {
     totalQuantum++;
     checkWakeUp();
     currentThread = popFromReady();
     currentThread->setRunning(true);
+    currentThread->quantomCount++;
     timer.it_value.tv_sec = 0;
     timer.it_value.tv_usec = quantum_usecs;
     if (setitimer(ITIMER_VIRTUAL, &timer, NULL) == -1) {
         exit_errno();
+    }
+    if (shouldJump) {
+        siglongjmp(currentThread->env, 1);
     }
 }
 
@@ -146,11 +160,12 @@ int Schedular::getTotalQuantum() {
 
 
 int Schedular::threadSleep(int num_quantums) {
-    if (currentThread->id == 0) {
+    if (currentThread->id == 0 || num_quantums <= 0) {
         return -1;
     }
     currentThread->setSleeping(true);
     int wakeUpTurn = totalQuantum + num_quantums;
+    currentThread->wakeUpTurn = wakeUpTurn;
     if (!sleepingThreads.count(wakeUpTurn)) {
         std::vector<Thread*> *wakeUpThreads = new std::vector<Thread*>();
         sleepingThreads[wakeUpTurn] = wakeUpThreads;
@@ -158,4 +173,90 @@ int Schedular::threadSleep(int num_quantums) {
     sleepingThreads[wakeUpTurn]->push_back(currentThread);
     switchTurn();
     return 0;
+}
+
+
+int Schedular::get_quantums(int tid) {
+    if (!threads.count(tid)){
+        return -1;
+    }
+    Thread* t = threads[tid];
+    return t->quantomCount;
+}
+
+
+void Schedular::deleteSleeping(Thread *thread) {
+    std::vector<Thread*>* wakeUpThreads = sleepingThreads[thread->wakeUpTurn];
+    if (wakeUpThreads->size() == 1) {
+        delete wakeUpThreads;
+        sleepingThreads.erase(thread->wakeUpTurn);
+    }
+    else {
+        for (int idx = 0; idx < wakeUpThreads->size(); idx++) {
+            if ((*wakeUpThreads)[idx] == thread) {
+                wakeUpThreads->erase(wakeUpThreads->begin() + idx);
+            }
+        }
+    }
+}
+
+
+int Schedular::terminateThread(int tid) {
+    if (tid != 0 && tid != currentThread->id) {
+        return deleteThread(tid);
+    }
+    else if (tid == 0) {
+        terminateAllThreads();
+        return 0;
+    }
+    else {
+        deleteSelf(tid);
+        return 0;
+    }
+}
+
+
+int Schedular::deleteThread(int tid) {
+    if (!threads.count(tid)) {
+        return -1;
+    }
+    Thread *thread = threads[tid];
+    if (thread->getReady()) {
+        removeFromReady(thread);
+    }
+    if (thread->getSleeping()) {
+        deleteSleeping(thread);
+    }
+    available_tid.push(tid);
+    threads.erase(tid);
+    delete thread;
+    return 0;
+}
+
+
+void Schedular::terminateAllThreads() {
+    std::vector<int> allTids;
+    for (auto const& imap: threads) {
+        allTids.push_back(imap.first);
+    }
+    for (int tid: allTids) {
+        deleteThread(tid);
+    }
+    delete readyQueue;
+}
+
+
+void Schedular::deleteSelf(int tid) {
+    deleteMode = true;
+    tidToDelete = tid;
+    siglongjmp(threads[0]->env, 1);
+}
+
+
+void Schedular::deleteByMain() {
+    deleteThread(tidToDelete);
+    deleteMode = false;
+    tidToDelete = -1;
+    currentThread = nullptr;
+    switchTurn();
 }

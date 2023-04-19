@@ -48,7 +48,7 @@ address_t translate_address(address_t addr)
 
 
 Thread::Thread(int id, int stackSize, thread_entry_point enteryPoint): 
-    id(id), quantomCount(0) {
+    id(id), quantomCount(0), stack(nullptr) {
     setReady(false);
     setRunning(false);
     setSleeping(false);
@@ -70,37 +70,44 @@ Thread::Thread(int id, int stackSize, thread_entry_point enteryPoint):
 }
 
 
-    void Thread::setReady(bool state) {
-        ready = state;
-        verifyStates();
+Thread::~Thread() {
+    if (id != 0) {
+        delete[] stack;
     }
-
-    void Thread::setRunning(bool state) {
-        running = state;
-        verifyStates();
-    }
+}
 
 
-    void Thread::setSleeping(bool state) {
-        sleeping = state;
-        verifyStates();
-    }
+void Thread::setReady(bool state) {
+    ready = state;
+    verifyStates();
+}
+
+void Thread::setRunning(bool state) {
+    running = state;
+    verifyStates();
+}
 
 
-    void Thread::setBlocked(bool state) {
-        blocked = state;
-        verifyStates();
-    }
+void Thread::setSleeping(bool state) {
+    sleeping = state;
+    verifyStates();
+}
 
 
-    void Thread::verifyStates() {
-        assert(!(ready && (running || blocked || sleeping)));
-        assert(!(blocked && id == 0));
-    }
+void Thread::setBlocked(bool state) {
+    blocked = state;
+    verifyStates();
+}
 
-    bool Thread::getReady() {return ready;};
-    bool Thread::getRunning() {return running;};
-    bool Thread::getSleeping() {return sleeping;};
-    bool Thread::getBlocked() {return blocked;};
+
+void Thread::verifyStates() {
+    assert(!(ready && (running || blocked || sleeping)));
+    assert(!(blocked && id == 0));
+}
+
+bool Thread::getReady() {return ready;};
+bool Thread::getRunning() {return running;};
+bool Thread::getSleeping() {return sleeping;};
+bool Thread::getBlocked() {return blocked;};
 
 
