@@ -45,7 +45,7 @@ class Schedular {
     bool deleteMode;
     int tidToDelete;
 
-    void startTurn(bool shouldJump);
+    void startTurn(bool shouldjump);
     void removeFromReady(Thread *threadToRemove);
     void checkWakeUp();
     void addToReady(Thread *thread);

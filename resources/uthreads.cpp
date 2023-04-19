@@ -14,10 +14,28 @@ void exit_system_error(std::string msg) {
 }
 
 void endTurn(int sig) {
-    schedular->switchTurn();
+    schedular->switchTurn();   
 }
 
+
+void blockTimer() {
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGVTALRM);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
+}
+
+
+void unblockTimer() {
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGVTALRM);
+    sigprocmask(SIG_UNBLOCK, &mask, NULL);
+}
+
+
 int uthread_init(int quantum_usecs) {
+    blockTimer();
     if (quantum_usecs <= 0) {
         return -1;
     }
@@ -28,12 +46,15 @@ int uthread_init(int quantum_usecs) {
     }
     catch (std::bad_alloc&) {
         exit_system_error("memory allocation failure");
-    }
-    
+    } 
+    unblockTimer();
     return 0;
 }
 
 int uthread_spawn(thread_entry_point entry_point) {
+    blockTimer();
+    sigset_t current_mask;
+
     int ret = -1;
     try {
         ret = schedular->uthreadSpawn(entry_point);
@@ -41,10 +62,12 @@ int uthread_spawn(thread_entry_point entry_point) {
     catch (std::bad_alloc&) {
         exit_system_error("memory allocation failure");
     }
+    unblockTimer();
     return ret;
 }
 
 int uthread_block(int tid) {
+    blockTimer();
     int ret = -1;
     try {
         ret = schedular->blockThread(tid);
@@ -52,20 +75,28 @@ int uthread_block(int tid) {
     catch (std::bad_alloc&) {
         exit_system_error("memory allocation failure");
     }
+    unblockTimer();    
     return ret;
 }
 
 int uthread_resume(int tid) {
-    return schedular->resumeThread(tid);
+    blockTimer();
+    int ret = schedular->resumeThread(tid);
+    unblockTimer();
+    return ret;
 }
 
 
 int uthread_get_total_quantums() {
-    return schedular->getTotalQuantum();
+    blockTimer();
+    int ret = schedular->getTotalQuantum();
+    unblockTimer();
+    return ret;
 }
 
 
 int uthread_sleep(int num_quantums) {
+    blockTimer();
     int ret = -1;
     try {
         ret = schedular->threadSleep(num_quantums);
@@ -73,28 +104,36 @@ int uthread_sleep(int num_quantums) {
     catch (std::bad_alloc&) {
         exit_system_error("memory allocation failure");
     }
+    unblockTimer();
     return ret;
 }
 
 
-int uthread_get_quantums(int tid){
+int uthread_get_quantums(int tid) {
+    blockTimer();
     int ret = -1;
     ret = schedular->get_quantums(tid);
+    unblockTimer();
     return ret;
 }
 
 
 int uthread_get_tid(){
-    return schedular->getCurrentThread()->id;
+    blockTimer();
+    int ret = schedular->getCurrentThread()->id;
+    unblockTimer();
+    return ret;
 }
 
 
 int uthread_terminate(int tid) {
+    blockTimer();
     int ret = schedular->terminateThread(tid);
     if (tid == 0) {
         delete schedular;
         exit(0);
     }
+    unblockTimer();
     return ret;
 }
 
@@ -166,75 +205,10 @@ int main(int argc, char const *argv[])
     /* code */
     uthread_init(50000);
     uthread_spawn(test1);
-    uthread_spawn(test2);
+    // uthread_spawn(test2);
     // uthread_spawn(test2);
     // uthread_spawn(test3);
     test0();
-    // // test2();
-    // // return 0;
-    // struct itimerval timer;
-    // timer.it_value.tv_sec = 1;        // first time interval, seconds part
-    // timer.it_value.tv_usec = 0;        // first time interval, microseconds part
-
-    // // configure the timer to expire every 3 sec after that.
-    // timer.it_interval.tv_sec = 3;    // following time intervals, seconds part
-    // timer.it_interval.tv_usec = 0;    // following time intervals, microseconds part
-    // if (setitimer(ITIMER_VIRTUAL, &timer, NULL))
-    // {
-    //     printf("setitimer error.");
-    // }
-    // for (int i = 0; i < 100000000000; i++) {
-    //     if (i % 10000) {
-    //         std::cout << i << std::endl;
-    //     }
-    //     std::cout << timer.it_value.tv_sec << " " << timer.it_value.tv_usec << std::endl;
-    // }
 }
 
-
-// int gotit = 0;
-
-
-// void timer_handler1(int sig)
-// {
-//     gotit = 1;
-//     printf("Timer expired\n");
-// }
-
-
-// int main(void)
-// {
-//     struct sigaction sa = {0};
-//     struct itimerval timer;
-
-//     // Install timer_handler as the signal handler for SIGVTALRM.
-//     sa.sa_handler = &timer_handler1;
-//     if (sigaction(SIGVTALRM, &sa, NULL) < 0)
-//     {
-//         printf("sigaction error.");
-//     }
-
-//     // Configure the timer to expire after 1 sec... */
-//     timer.it_value.tv_sec = 1;        // first time interval, seconds part
-//     timer.it_value.tv_usec = 0;        // first time interval, microseconds part
-
-//     // configure the timer to expire every 3 sec after that.
-//     // timer.it_interval.tv_sec = 3;    // following time intervals, seconds part
-//     // timer.it_interval.tv_usec = 0;    // following time intervals, microseconds part
-
-//     // Start a virtual timer. It counts down whenever this process is executing.
-//     if (setitimer(ITIMER_VIRTUAL, &timer, NULL))
-//     {
-//         printf("setitimer error.");
-//     }
-
-//     for (;;)
-//     {
-//         if (gotit)
-//         {
-//             printf("Got it!\n");
-//             gotit = 0;
-//         }
-//     }
-// }
 
