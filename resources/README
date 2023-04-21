@@ -1,0 +1,72 @@
+yonibor, alonfrishberg
+yonathan bornfeld 207049461, alon frishberg 315878314
+
+files:
+schedular.h- keeps all the threads and manages the scheduling and requiered operations
+schedular.cpp- keeps all the threads and manages the scheduling and requiered operations
+thread.h- keeps the relevant data for a thread
+thread.cpp- keeps the relevant data for a thread
+ex_utils.h- helps with an error scenario, discrptive error util
+ex_utils.cpp- helps with an error scenario, discrptive error util
+uthreads.cpp- the api, mainly calls schedular and warps with signal masking
+
+theoretical questions-
+1. a. sigsetjmp- saves the context of a thread, including- SP, PC
+                 into some buffer 
+      siglongjmp- switches (jumps) to a specific thread, meaning 
+                  switching to it's context (including SP, PC).
+   b. sigsetjmp allows you to also save the signal mask 
+      (if given the savemask input is non zero), and if you save it,
+      the call by siglongjmp that jumps to this thread will restore
+      the signal mask.
+
+2. one general use can be performing some calculations by different
+   threads without using IO devices. 
+   in this example it makes sense to use user-level threads because
+   they don't call the OS (don't switch to kernel) and therefore have
+   less overhead, and because you don't use IO devices, you won't 
+   encounter a situation where all of the threads will be waiting
+   for IO response.
+
+3. disadvantages-
+    the handaling of multiple processes in the OS creates larger overhead
+    than the handaling of mulitple kernel level threads
+   advanteges-
+    kernel level threads share memory and multi process don't.
+    since the tabs work independatly it is better to have saparate memory 
+    for each of them, since it gives you more flexability of allocating
+    the amount of memory you want for each of them, and saves you the 
+    effort of handling shared memory between them.
+
+4. a. when typing kill pid + enter, the keyboard sends hardware interrupts indicating the 
+      keys being pressed. the OS delivers this information to the terminal.
+   b. after the terminal is informed of the command being given, the OS sends 
+      SIGTERM signal to the process of the application. 
+   c. after receiving SIGTERM, the application process is responsible for saving and 
+      cleaning up the relevant data and resources and exiting.
+   d. when the process exits, there's a interrupt and the OS switches the process mode
+      to terminated and removes it from the running and ready processes. 
+      the exit status can be used by a parent process if one exists.
+
+5. virtual time is the time measured during the user mode running of the process,
+   excluding the execution time where the process is not running, for example
+   waiting for IO devices, blocked, in ready queue, where the computer is in
+   kernel mode and so on. gnerally, it's the user mode cpu time of operations 
+   that directly belong to the process, and not to anything outside of it.
+   whereas real time is the time that passes in the world, without any relation
+   to what processes are running.
+   examples-
+    a. virtual time- in the excercise we used virtual time to schedule the 
+        changing of the turns between the threads. the reason to use virtual
+        time is to measure it in a "vaccum" enviorment and to ignore outside
+        "noises". for example, if we didn't use virtual time and our computer
+        was working on aonther independant process that consumes time, 
+        it would have affect our scheduling and might have lead to unequal 
+        distribution between the threads.
+    b. alarm application- for exampmle in a process that is responsible for
+       informing the user of time that passes in the real world. for example,
+       the user wants an alaram to sound off in 10 minutes.
+       in such cases we would only care about the absolute time that passes,
+       regardless in which modes / processes the computer was during that
+       period.
+

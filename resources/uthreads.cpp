@@ -221,15 +221,15 @@ void test0() {
 }
 
 
-int main(int argc, char const *argv[])
-{
-    /* code */
-    uthread_init(50000);
-    uthread_spawn(test1);
-    // uthread_spawn(test2);
-    // uthread_spawn(test2);
-    // uthread_spawn(test3);
-    test0();
-}
+// int main(int argc, char const *argv[])
+// {
+//     /* code */
+//     uthread_init(50000);
+//     uthread_spawn(test1);
+//     // uthread_spawn(test2);
+//     // uthread_spawn(test2);
+//     // uthread_spawn(test3);
+//     test0();
+// }
 
 
