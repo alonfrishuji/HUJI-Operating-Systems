@@ -20,17 +20,29 @@ void endTurn(int sig) {
 
 void blockTimer() {
     sigset_t mask;
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGVTALRM);
-    sigprocmask(SIG_BLOCK, &mask, NULL);
+    if (sigemptyset(&mask) == -1) {
+        exit_errno(); 
+    }
+    if (sigaddset(&mask, SIGVTALRM) == -1) {
+        exit_errno();
+    }
+    if (sigprocmask(SIG_BLOCK, &mask, NULL) == -1) {
+        exit_errno();
+    }
 }
 
 
 void unblockTimer() {
     sigset_t mask;
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGVTALRM);
-    sigprocmask(SIG_UNBLOCK, &mask, NULL);
+    if (sigemptyset(&mask) == -1) {
+        exit_errno();
+    }
+    if (sigaddset(&mask, SIGVTALRM) == -1) {
+        exit_errno();
+    }
+    if (sigprocmask(SIG_UNBLOCK, &mask, NULL) == -1) {
+        exit_errno();
+    }
 }
 
 
@@ -58,8 +70,6 @@ int uthread_init(int quantum_usecs) {
 
 int uthread_spawn(thread_entry_point entry_point) {
     blockTimer();
-    sigset_t current_mask;
-
     int ret = -1;
     try {
         ret = schedular->uthreadSpawn(entry_point);
@@ -133,7 +143,13 @@ int uthread_get_tid(){
 
 int uthread_terminate(int tid) {
     blockTimer();
-    int ret = schedular->terminateThread(tid);
+    int ret = -1;
+    try {
+        ret = schedular->terminateThread(tid);
+    }
+    catch (std::bad_alloc&) {
+        exit_system_error("memory allocation failure");
+    }
     if (tid == 0) {
         delete schedular;
         exit(0);
