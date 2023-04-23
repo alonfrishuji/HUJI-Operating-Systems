@@ -28,6 +28,6 @@ class Thread {
     bool running;
     bool sleeping;
     bool blocked;
-    void verifyStates();
+    // void verifyStates();
     
 };

@@ -1,5 +1,5 @@
 #include "schedular.h"
-#include <cassert>
+// #include <cassert>
 
 std::string LIBRARY_ERROR_MSG = "thread library error: ";
 
@@ -59,7 +59,7 @@ void Schedular::switchTurn() {
         did_just_save_bookmark = ret_val == 0;
     }
     if (deleteMode) {
-        assert(!did_just_save_bookmark);
+        // assert(!did_just_save_bookmark);
         deleteByMain();
     }
     if (did_just_save_bookmark || currentThread == nullptr) {

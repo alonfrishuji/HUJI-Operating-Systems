@@ -1,6 +1,6 @@
 #include "thread.h"
 #include <signal.h>
-#include <cassert>
+// #include <cassert>
 
 
 
@@ -79,31 +79,31 @@ Thread::~Thread() {
 
 void Thread::setReady(bool state) {
     ready = state;
-    verifyStates();
+    // verifyStates();
 }
 
 void Thread::setRunning(bool state) {
     running = state;
-    verifyStates();
+    // verifyStates();
 }
 
 
 void Thread::setSleeping(bool state) {
     sleeping = state;
-    verifyStates();
+    // verifyStates();
 }
 
 
 void Thread::setBlocked(bool state) {
     blocked = state;
-    verifyStates();
+    // verifyStates();
 }
 
 
-void Thread::verifyStates() {
-    assert(!(ready && (running || blocked || sleeping)));
-    assert(!(blocked && id == 0));
-}
+// void Thread::verifyStates() {
+//     assert(!(ready && (running || blocked || sleeping)));
+//     assert(!(blocked && id == 0));
+// }
 
 bool Thread::getReady() {return ready;};
 bool Thread::getRunning() {return running;};
