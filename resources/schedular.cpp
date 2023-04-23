@@ -210,7 +210,7 @@ void Schedular::deleteSleeping(Thread *thread) {
         sleepingThreads.erase(thread->wakeUpTurn);
     }
     else {
-        for (int idx = 0; idx < wakeUpThreads->size(); idx++) {
+        for (size_t idx = 0; idx < wakeUpThreads->size(); idx++) {
             if ((*wakeUpThreads)[idx] == thread) {
                 wakeUpThreads->erase(wakeUpThreads->begin() + idx);
             }
