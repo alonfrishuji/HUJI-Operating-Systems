@@ -14,4 +14,8 @@ JobContext::JobContext( const MapReduceClient& client, const InputVec& inputVec,
         threads = new pthread_t*[multiThreadLevel];
         threadsContext = new ThreadContext*[multiThreadLevel];
         shuffleBarrier = new ShuffleBarrier(multiThreadLevel);
+
+        for (int threadId = 0; threadId < multiThreadLevel; threadId++) {
+            threadsInter.push_back(new IntermediateVec);
+        }
     }

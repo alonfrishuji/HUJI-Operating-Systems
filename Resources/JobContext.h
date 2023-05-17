@@ -32,8 +32,8 @@ public:
     ThreadContext** threadsContext;
     std::atomic_int mapCounter;
     std::atomic_int mapFinishedCounter;
-    std::vector<IntermediateVec> threadsInter;
-    std::vector<IntermediateVec> shuffledInter;
+    std::vector<IntermediateVec*> threadsInter;
+    std::vector<IntermediateVec*> shuffledInter;
 
     ShuffleBarrier *shuffleBarrier;
     int interSize;

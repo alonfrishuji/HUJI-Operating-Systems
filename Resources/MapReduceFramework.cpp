@@ -3,6 +3,7 @@
 #include <utility>
 #include <algorithm>
 #include <pthread.h>
+#include <cstdio>
 
 bool sort_inter(const IntermediatePair &left, const IntermediatePair &right) {
         return (*(left.first)) < (*(right.first));
@@ -28,16 +29,16 @@ void threadMap(ThreadContext *threadContext, JobContext *jobContext) {
         (jobContext->mapFinishedCounter)++;
     }
     int threadId = threadContext->threadId;
-    IntermediateVec &interVec = jobContext->threadsInter[threadId]; 
-    std::sort(interVec.begin(), interVec.end(), sort_inter);
+    IntermediateVec *interVec = jobContext->threadsInter[threadId]; 
+    std::sort(interVec->begin(), interVec->end(), sort_inter);
 }
 
 
 K2 *getMaxKey(JobContext *jobContext) {
     K2* maxKey = nullptr;
-    for (IntermediateVec& interVec: jobContext->threadsInter) {
-        if (!interVec.empty()) {
-            K2* curKey = interVec.back().first;
+    for (IntermediateVec* interVec: jobContext->threadsInter) {
+        if (!interVec->empty()) {
+            K2* curKey = interVec->back().first;
             if (maxKey == nullptr || (*maxKey) < (*curKey)) {
                 maxKey = curKey;
             }
@@ -48,15 +49,15 @@ K2 *getMaxKey(JobContext *jobContext) {
 
 
 void popMaxKey(JobContext *jobContext, K2 *maxKey) {
-    IntermediateVec maxPairs;
-    for (IntermediateVec& interVec: jobContext->threadsInter) {
-        if (interVec.empty()) {
+    IntermediateVec *maxPairs = new IntermediateVec;
+    for (IntermediateVec* interVec: jobContext->threadsInter) {
+        if (interVec->empty()) {
             continue;
         }
-        IntermediatePair& backPair = interVec.back();
-        while (!interVec.empty() && inter_equal(maxKey, backPair.first)) {
-            interVec.pop_back();
-            maxPairs.push_back(backPair);
+        IntermediatePair backPair = interVec->back();
+        while (!interVec->empty() && inter_equal(maxKey, backPair.first)) {
+            interVec->pop_back();
+            maxPairs->push_back(backPair);
             jobContext->shuffleAmount++;
         }
     }
@@ -65,8 +66,8 @@ void popMaxKey(JobContext *jobContext, K2 *maxKey) {
 
 
 void shuffle(JobContext *jobContext) {
-    for (IntermediateVec& interVec: jobContext->threadsInter) {
-        jobContext->interSize += interVec.size();
+    for (IntermediateVec* interVec: jobContext->threadsInter) {
+        jobContext->interSize += interVec->size();
     }
     jobContext->stage = SHUFFLE_STAGE;
     while (jobContext->shuffleAmount < jobContext->interSize) {
@@ -80,8 +81,10 @@ void* runThread(void* arg) {
     ThreadContext *threadContext = (ThreadContext*) arg;
     JobContext *jobContext = threadContext->jobContext;
     threadMap(threadContext, jobContext);
+    printf("thred %d reached barrier\n", threadContext->threadId);
     jobContext->shuffleBarrier->barrier(threadContext->threadId);
     if (threadContext->threadId == 0) {
+        printf("shufeling shufeling\n");
         shuffle(jobContext);
         jobContext->shuffleBarrier->afterShuffle();
     } 
@@ -108,7 +111,7 @@ JobHandle startMapReduceJob(const MapReduceClient& client,
 void emit2 (K2* key, V2* value, void* context) {
     ThreadContext *threadContext = (ThreadContext*) context;
     IntermediatePair pair(key, value);
-    threadContext->jobContext->threadsInter[threadContext->threadId].push_back(pair);
+    threadContext->jobContext->threadsInter[threadContext->threadId]->push_back(pair);
 }
 
 

@@ -71,11 +71,23 @@ void testInter(JobHandle job) {
 	JobContext *jobContext = (JobContext *)job;
 	for (int i = 0; i < jobContext->multiThreadLevel; i++) {
 		printf("thread %d\n", i);
-		IntermediateVec& interVec = jobContext->threadsInter[i];
-		for (IntermediatePair& pair: interVec) {
+		IntermediateVec* interVec = jobContext->threadsInter[i];
+		for (IntermediatePair& pair: *interVec) {
 			char c = ((const KChar*)pair.first)->c;
 			int count = ((const VCount*)pair.second)->count;
 			printf("The character %c appeared %d\n", c, count);
+		}
+	}	
+}
+
+
+void testShuffle(JobHandle job) {
+	JobContext *jobContext = (JobContext *)job;
+	for (IntermediateVec* vec: jobContext->shuffledInter) {
+		for (IntermediatePair pair: *vec) {
+			char c = ((const KChar*)pair.first)->c;
+			int count = ((const VCount*)pair.second)->count;
+			printf("after shuffle- The character %c appeared %d\n", c, count);
 		}
 	}	
 }
@@ -106,8 +118,12 @@ int main(int argc, char** argv)
         if (last_state.stage != state.stage || last_state.percentage != state.percentage){
             printf("stage %d, %f%% \n", 
 			state.stage, state.percentage);
-			if (state.percentage == 100.f) {
+			if (state.stage == MAP_STAGE && state.percentage == 100.f) {
 				testInter(job);
+			}
+			printf("----------------------------------------------------------------------");
+			if (state.stage == SHUFFLE_STAGE && state.percentage == 100.f) {
+				testShuffle(job);
 			}
         }
 		usleep(100000);
