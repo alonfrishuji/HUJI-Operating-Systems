@@ -7,9 +7,11 @@ JobContext::JobContext( const MapReduceClient& client, const InputVec& inputVec,
         outputVec(outputVec),
         multiThreadLevel(multiThreadLevel),
         stage(UNDEFINED_STAGE),
-        mapCounter(0)
+        mapCounter(0),
+        interSize(0),
+        shuffleAmount(0)
     {
         threads = new pthread_t*[multiThreadLevel];
         threadsContext = new ThreadContext*[multiThreadLevel];
-        threadsInter = new std::vector<IntermediatePair>[multiThreadLevel];
+        shuffleBarrier = new ShuffleBarrier(multiThreadLevel);
     }

@@ -3,9 +3,12 @@
 
 #include "MapReduceClient.h"
 #include "MapReduceFramework.h"
+#include "ShuffleBarrier.h"
 #include <pthread.h>
 #include <vector>
 #include <atomic>
+
+class JobContext;
 
 struct ThreadContext {
     JobContext *jobContext;
@@ -23,24 +26,23 @@ public:
     const InputVec& inputVec;
     OutputVec& outputVec;
     int multiThreadLevel;
-    stage_t stage;
+    std::atomic<stage_t> stage;
 
     pthread_t** threads;
     ThreadContext** threadsContext;
-    std::atomic<int> mapCounter;
-    std::vector<IntermediatePair>* threadsInter;
+    std::atomic_int mapCounter;
+    std::atomic_int mapFinishedCounter;
+    std::vector<IntermediateVec> threadsInter;
+    std::vector<IntermediateVec> shuffledInter;
+
+    ShuffleBarrier *shuffleBarrier;
+    int interSize;
+    int shuffleAmount;
     
 
     JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec,
         int multiThreadLevel);
-    ~JobContext();
 };
-
-
-JobContext::~JobContext()
-{
-}
-
 
 
 #endif //JOB_CONTEXT_H

@@ -1,4 +1,5 @@
 #include "MapReduceFramework.h"
+#include "JobContext.h"
 #include <cstdio>
 #include <string>
 #include <array>
@@ -66,17 +67,35 @@ public:
 };
 
 
+void testInter(JobHandle job) {
+	JobContext *jobContext = (JobContext *)job;
+	for (int i = 0; i < jobContext->multiThreadLevel; i++) {
+		printf("thread %d\n", i);
+		IntermediateVec& interVec = jobContext->threadsInter[i];
+		for (IntermediatePair& pair: interVec) {
+			char c = ((const KChar*)pair.first)->c;
+			int count = ((const VCount*)pair.second)->count;
+			printf("The character %c appeared %d\n", c, count);
+		}
+	}	
+}
+
+
 int main(int argc, char** argv)
 {
 	CounterClient client;
 	InputVec inputVec;
 	OutputVec outputVec;
+	VString s0("bbccbaaaaa");
 	VString s1("This string is full of characters");
 	VString s2("Multithreading is awesome");
 	VString s3("race conditions are bad");
+	VString s4("ddddea");
+	inputVec.push_back({nullptr, &s0});
 	inputVec.push_back({nullptr, &s1});
 	inputVec.push_back({nullptr, &s2});
 	inputVec.push_back({nullptr, &s3});
+	inputVec.push_back({nullptr, &s4});
 	JobState state;
     JobState last_state={UNDEFINED_STAGE,0};
 	JobHandle job = startMapReduceJob(client, inputVec, outputVec, 4);
@@ -87,6 +106,9 @@ int main(int argc, char** argv)
         if (last_state.stage != state.stage || last_state.percentage != state.percentage){
             printf("stage %d, %f%% \n", 
 			state.stage, state.percentage);
+			if (state.percentage == 100.f) {
+				testInter(job);
+			}
         }
 		usleep(100000);
         last_state = state;
