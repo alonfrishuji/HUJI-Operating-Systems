@@ -4,11 +4,12 @@
 
 ShuffleBarrier::ShuffleBarrier(int numThreads)
 		: mutex(PTHREAD_MUTEX_INITIALIZER)
-		, zeroCond(PTHREAD_COND_INITIALIZER)
-		, nonZeroCond(PTHREAD_COND_INITIALIZER)
 		, count(0)
 		, numThreads(numThreads)
-{ }
+{ 		
+		pthread_cond_init(&zeroCond, NULL);
+		pthread_cond_init(&nonZeroCond, NULL);
+}
 
 
 ShuffleBarrier::~ShuffleBarrier()
@@ -51,12 +52,6 @@ void ShuffleBarrier::barrier(int threadId)
 				fprintf(stderr, "[[Barrier]] error on pthread_cond_wait");
 				exit(1);
 			}
-		}
-	}
-	if (threadId == 0) {
-		if (pthread_mutex_lock(&mutex) != 0) {
-			fprintf(stderr, "[[Barrier]] error on pthread_mutex_lock");
-			exit(1);
 		}
 	}
 	if (pthread_mutex_unlock(&mutex) != 0) {

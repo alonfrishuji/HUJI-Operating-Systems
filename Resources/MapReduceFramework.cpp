@@ -20,7 +20,7 @@ void threadMap(ThreadContext *threadContext, JobContext *jobContext) {
         jobContext->stage = MAP_STAGE;
     }
     while (true) {
-        int mapIndex = (jobContext->mapCounter)++;
+        int mapIndex = jobContext->mapCounter++;
         if (mapIndex >= jobContext->inputVec.size()) {
             break;
         }
@@ -51,13 +51,9 @@ K2 *getMaxKey(JobContext *jobContext) {
 void popMaxKey(JobContext *jobContext, K2 *maxKey) {
     IntermediateVec *maxPairs = new IntermediateVec;
     for (IntermediateVec* interVec: jobContext->threadsInter) {
-        if (interVec->empty()) {
-            continue;
-        }
-        IntermediatePair backPair = interVec->back();
-        while (!interVec->empty() && inter_equal(maxKey, backPair.first)) {
+        while (!interVec->empty() && inter_equal(maxKey, interVec->back().first)) {
+            maxPairs->push_back(interVec->back());
             interVec->pop_back();
-            maxPairs->push_back(backPair);
             jobContext->shuffleAmount++;
         }
     }
