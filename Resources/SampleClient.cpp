@@ -93,6 +93,15 @@ void testShuffle(JobHandle job) {
 }
 
 
+void* wait2(void *arg) {
+	JobHandle *jobHandle = (JobHandle*)arg;
+	printf("wait2 before\n");
+	waitForJob(jobHandle);
+	printf("wait2 after\n");
+	return 0;
+}
+
+
 int main(int argc, char** argv)
 {
 	CounterClient client;
@@ -113,23 +122,24 @@ int main(int argc, char** argv)
 	JobHandle job = startMapReduceJob(client, inputVec, outputVec, 4);
 	getJobState(job, &state);
     
-	while (state.stage != REDUCE_STAGE || state.percentage != 100.0)
-	{
-        if (last_state.stage != state.stage || last_state.percentage != state.percentage){
-            printf("stage %d, %f%% \n", 
-			state.stage, state.percentage);
-			if (state.stage == MAP_STAGE && state.percentage == 100.f) {
-				testInter(job);
-			}
-			printf("----------------------------------------------------------------------");
-			if (state.stage == SHUFFLE_STAGE && state.percentage == 100.f) {
-				testShuffle(job);
-			}
-        }
-		usleep(100000);
-        last_state = state;
-		getJobState(job, &state);
-	}
+	// while (state.stage != REDUCE_STAGE || state.percentage != 100.0)
+	// {
+    //     if (last_state.stage != state.stage || last_state.percentage != state.percentage){
+    //         printf("stage %d, %f%% \n", 
+	// 		state.stage, state.percentage);
+	// 		if (state.stage == MAP_STAGE && state.percentage == 100.f) {
+	// 			testInter(job);
+	// 		}
+	// 		printf("----------------------------------------------------------------------");
+	// 		if (state.stage == SHUFFLE_STAGE && state.percentage == 100.f) {
+	// 			testShuffle(job);
+	// 		}
+    //     }
+	// 	usleep(100000);
+    //     last_state = state;
+	// 	getJobState(job, &state);
+	// }
+	getJobState(job, &state);
 	printf("stage %d, %f%% \n", 
 			state.stage, state.percentage);
 	printf("Done!\n");

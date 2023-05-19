@@ -26,6 +26,7 @@ public:
     const InputVec& inputVec;
     OutputVec& outputVec;
     pthread_mutex_t outpuMutex;
+    pthread_mutex_t waitMutex;
 
     int multiThreadLevel;
     std::atomic<stage_t> stage;
@@ -48,6 +49,7 @@ public:
 
     JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec,
         int multiThreadLevel);
+    ~JobContext();
 };
 
 

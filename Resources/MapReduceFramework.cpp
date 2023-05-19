@@ -91,10 +91,8 @@ void* runThread(void* arg) {
     ThreadContext *threadContext = (ThreadContext*) arg;
     JobContext *jobContext = threadContext->jobContext;
     threadMap(threadContext, jobContext);
-    printf("thred %d reached barrier\n", threadContext->threadId);
     jobContext->shuffleBarrier->barrier(threadContext->threadId);
     if (threadContext->threadId == 0) {
-        printf("shufeling shufeling\n");
         shuffle(jobContext);
         jobContext->stage = REDUCE_STAGE;
         jobContext->shuffleBarrier->afterShuffle();
@@ -143,7 +141,7 @@ void emit3 (K3* key, V3* value, void* context) {
 
 
 float getPercentageRatio(int finish, int max) {
-    return max != 0.f ? (((float)finish/max) * 100.f) : 100.f;
+    return max != 0 ? (((float)finish/max) * 100.f) : 100.f;
 }
 
 
@@ -173,10 +171,25 @@ void getJobState(JobHandle job, JobState* state) {
 
 void waitForJob(JobHandle job) {
     JobContext *jobContext = (JobContext*) job;
+    if (pthread_mutex_lock(&jobContext->waitMutex) != 0){
+		fprintf(stderr, "[[Barrier]] error on pthread_mutex_lock");
+		exit(1);
+	}
+    for (int threadId = 0; threadId < jobContext->multiThreadLevel; threadId++) {
+        pthread_join(*(jobContext->threads[threadId]), NULL);
+    }
+    if (pthread_mutex_unlock(&jobContext->waitMutex) != 0) {
+		fprintf(stderr, "[[Barrier]] error on pthread_mutex_unlock");
+		exit(1);
+	}
 }
 
 
-void closeJobHandle(JobHandle job) {}
+void closeJobHandle(JobHandle job) {
+    waitForJob(job);
+    JobContext *jobContext = (JobContext*) job;
+    delete jobContext;
+}
 
 
 
