@@ -5,9 +5,13 @@ JobContext::JobContext( const MapReduceClient& client, const InputVec& inputVec,
         client(client),
         inputVec(inputVec), 
         outputVec(outputVec),
+        outpuMutex(PTHREAD_MUTEX_INITIALIZER),
         multiThreadLevel(multiThreadLevel),
         stage(UNDEFINED_STAGE),
         mapCounter(0),
+        mapFinishedCounter(0),
+        outputCounter(0),
+        outputFinishedCounter(0),
         interSize(0),
         shuffleAmount(0)
     {

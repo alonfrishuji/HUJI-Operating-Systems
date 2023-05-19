@@ -4,6 +4,8 @@
 
 ShuffleBarrier::ShuffleBarrier(int numThreads)
 		: mutex(PTHREAD_MUTEX_INITIALIZER)
+		, zeroCond(PTHREAD_COND_INITIALIZER)
+		, nonZeroCond(PTHREAD_COND_INITIALIZER)
 		, count(0)
 		, numThreads(numThreads)
 { 		

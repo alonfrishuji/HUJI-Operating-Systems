@@ -25,6 +25,8 @@ public:
     const MapReduceClient& client;
     const InputVec& inputVec;
     OutputVec& outputVec;
+    pthread_mutex_t outpuMutex;
+
     int multiThreadLevel;
     std::atomic<stage_t> stage;
 
@@ -32,8 +34,12 @@ public:
     ThreadContext** threadsContext;
     std::atomic_int mapCounter;
     std::atomic_int mapFinishedCounter;
+    std::atomic_int outputCounter;
+    std::atomic_int outputFinishedCounter;
     std::vector<IntermediateVec*> threadsInter;
     std::vector<IntermediateVec*> shuffledInter;
+
+
 
     ShuffleBarrier *shuffleBarrier;
     int interSize;

@@ -73,6 +73,20 @@ void shuffle(JobContext *jobContext) {
 }
 
 
+void reduce(ThreadContext *threadContext, JobContext *jobContext) {
+    while (true) {
+        int outputIdx = jobContext->outputCounter++;
+        if (outputIdx >= jobContext->shuffledInter.size()) {
+            break;
+        }
+        IntermediateVec *curVec  = jobContext->shuffledInter[outputIdx];
+        int curVecSize = curVec->size();
+        jobContext->client.reduce(curVec, threadContext);
+        jobContext->outputFinishedCounter += curVecSize;
+    }
+}
+
+
 void* runThread(void* arg) {
     ThreadContext *threadContext = (ThreadContext*) arg;
     JobContext *jobContext = threadContext->jobContext;
@@ -82,8 +96,10 @@ void* runThread(void* arg) {
     if (threadContext->threadId == 0) {
         printf("shufeling shufeling\n");
         shuffle(jobContext);
+        jobContext->stage = REDUCE_STAGE;
         jobContext->shuffleBarrier->afterShuffle();
-    } 
+    }
+    reduce(threadContext, jobContext); 
     return 0;
 }
 
@@ -111,7 +127,19 @@ void emit2 (K2* key, V2* value, void* context) {
 }
 
 
-void emit3 (K3* key, V3* value, void* context) {}
+void emit3 (K3* key, V3* value, void* context) {
+    ThreadContext *threadContext = (ThreadContext*) context;
+    OutputPair pair(key, value);
+    if (pthread_mutex_lock(&threadContext->jobContext->outpuMutex) != 0) {
+		fprintf(stderr, "[[Barrier]] error on pthread_mutex_lock");
+		exit(1);
+	}
+    threadContext->jobContext->outputVec.push_back(pair);
+    if (pthread_mutex_unlock(&threadContext->jobContext->outpuMutex) != 0) {
+		fprintf(stderr, "[[Barrier]] error on pthread_mutex_unlock");
+		exit(1);
+	}
+}
 
 
 float getPercentageRatio(int finish, int max) {
@@ -128,6 +156,8 @@ float getPercentage(stage_t stage, JobContext *jobContext) {
         return getPercentageRatio(jobContext->mapFinishedCounter, jobContext->inputVec.size());
     case SHUFFLE_STAGE:
         return getPercentageRatio(jobContext->shuffleAmount, jobContext->interSize);
+    case REDUCE_STAGE:
+        return getPercentageRatio(jobContext->outputFinishedCounter, jobContext->interSize);
     default:
         return 0.f;
     }
@@ -138,6 +168,11 @@ void getJobState(JobHandle job, JobState* state) {
     JobContext *jobContext = (JobContext*) job;
     state->stage = jobContext->stage.load();
     state->percentage = getPercentage(state->stage, jobContext); 
+}
+
+
+void waitForJob(JobHandle job) {
+    JobContext *jobContext = (JobContext*) job;
 }
 
 
