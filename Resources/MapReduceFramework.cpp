@@ -20,7 +20,7 @@ void threadMap(ThreadContext *threadContext, JobContext *jobContext) {
         jobContext->stage = MAP_STAGE;
     }
     while (true) {
-        int mapIndex = jobContext->mapCounter++;
+        unsigned int mapIndex = jobContext->mapCounter++;
         if (mapIndex >= jobContext->inputVec.size()) {
             break;
         }
@@ -75,7 +75,7 @@ void shuffle(JobContext *jobContext) {
 
 void reduce(ThreadContext *threadContext, JobContext *jobContext) {
     while (true) {
-        int outputIdx = jobContext->outputCounter++;
+        unsigned int outputIdx = jobContext->outputCounter++;
         if (outputIdx >= jobContext->shuffledInter.size()) {
             break;
         }
@@ -140,7 +140,7 @@ void emit3 (K3* key, V3* value, void* context) {
 }
 
 
-float getPercentageRatio(int finish, int max) {
+float getPercentageRatio(unsigned int finish, unsigned int max) {
     return max != 0 ? (((float)finish/max) * 100.f) : 100.f;
 }
 

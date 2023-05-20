@@ -33,18 +33,18 @@ public:
 
     pthread_t** threads;
     ThreadContext** threadsContext;
-    std::atomic_int mapCounter;
-    std::atomic_int mapFinishedCounter;
-    std::atomic_int outputCounter;
-    std::atomic_int outputFinishedCounter;
+    std::atomic<unsigned int> mapCounter;
+    std::atomic<unsigned int> mapFinishedCounter;
+    std::atomic<unsigned int> outputCounter;
+    std::atomic<unsigned int> outputFinishedCounter;
     std::vector<IntermediateVec*> threadsInter;
     std::vector<IntermediateVec*> shuffledInter;
 
 
 
     ShuffleBarrier *shuffleBarrier;
-    int interSize;
-    int shuffleAmount;
+    unsigned int interSize;
+    unsigned int shuffleAmount;
     
 
     JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec,
