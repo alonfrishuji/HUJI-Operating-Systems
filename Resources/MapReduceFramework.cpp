@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <pthread.h>
 #include <cstdio>
+#include "Utils.h"
 
 bool sort_inter(const IntermediatePair &left, const IntermediatePair &right) {
         return (*(left.first)) < (*(right.first));
@@ -129,13 +130,11 @@ void emit3 (K3* key, V3* value, void* context) {
     ThreadContext *threadContext = (ThreadContext*) context;
     OutputPair pair(key, value);
     if (pthread_mutex_lock(&threadContext->jobContext->outpuMutex) != 0) {
-		fprintf(stderr, "[[Barrier]] error on pthread_mutex_lock");
-		exit(1);
+		exitErr("error on pthread_mutex_lock");
 	}
     threadContext->jobContext->outputVec.push_back(pair);
     if (pthread_mutex_unlock(&threadContext->jobContext->outpuMutex) != 0) {
-		fprintf(stderr, "[[Barrier]] error on pthread_mutex_unlock");
-		exit(1);
+		exitErr("error on pthread_mutex_unlock");
 	}
 }
 
