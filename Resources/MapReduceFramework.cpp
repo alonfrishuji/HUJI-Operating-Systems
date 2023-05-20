@@ -98,7 +98,7 @@ void* runThread(void* arg) {
         jobContext->shuffleBarrier->afterShuffle();
     }
     reduce(threadContext, jobContext); 
-    return 0;
+    return nullptr;
 }
 
 
@@ -175,8 +175,11 @@ void waitForJob(JobHandle job) {
 		fprintf(stderr, "[[Barrier]] error on pthread_mutex_lock");
 		exit(1);
 	}
-    for (int threadId = 0; threadId < jobContext->multiThreadLevel; threadId++) {
-        pthread_join(*(jobContext->threads[threadId]), NULL);
+    if (!jobContext->finished) {
+        for (int threadId = 0; threadId < jobContext->multiThreadLevel; threadId++) {
+            pthread_join(*(jobContext->threads[threadId]), NULL);
+        }
+        jobContext->finished = true;
     }
     if (pthread_mutex_unlock(&jobContext->waitMutex) != 0) {
 		fprintf(stderr, "[[Barrier]] error on pthread_mutex_unlock");

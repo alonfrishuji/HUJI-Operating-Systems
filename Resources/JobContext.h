@@ -45,6 +45,7 @@ public:
     ShuffleBarrier *shuffleBarrier;
     unsigned int interSize;
     unsigned int shuffleAmount;
+    bool finished;
     
 
     JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec,

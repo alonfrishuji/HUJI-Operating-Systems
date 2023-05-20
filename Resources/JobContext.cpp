@@ -15,7 +15,8 @@ JobContext::JobContext( const MapReduceClient& client, const InputVec& inputVec,
         outputCounter(0),
         outputFinishedCounter(0),
         interSize(0),
-        shuffleAmount(0)
+        shuffleAmount(0),
+        finished(false)
     {
         if (pthread_mutex_init(&outpuMutex, NULL) != 0) {
             exitErr("error on pthread_mutex_init");
