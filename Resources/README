@@ -1,0 +1,17 @@
+yonibor, alonfrishberg
+yonathan bornfeld 207049461, alon frishberg 315878314
+EX: 3
+
+FILES:
+JobContext.cpp- class responsible for holding all job data,
+    including data vectors and threads data, mutext, 
+    atomic counter, etc
+JobContext.h- h for JobContext
+ShuffleBarrier.cpp- barrier class, similar to the given 
+    example in resources, but adapted to have two different
+    conditions, one for the zero thread, and another for
+    the others
+ShuffleBarrier.h- h for ShuffleBarrier
+MapReduceFramework.cpp - implements the frameworks api
+Utils.cpp- used for exit
+Utils.h- g for Utils
