@@ -113,7 +113,9 @@ JobHandle startMapReduceJob(const MapReduceClient& client,
             threadContext->threadId = threadIdx;
             jobContext->threadsContext[threadIdx] = threadContext;
             jobContext->threads[threadIdx] = new pthread_t;
-            pthread_create(jobContext->threads[threadIdx], NULL, runThread, threadContext);
+            if (pthread_create(jobContext->threads[threadIdx], NULL, runThread, threadContext) != 0) {
+                exitErr("error on pthread_create");
+            }
         }
         return static_cast<JobHandle>(jobContext);
     }
@@ -171,18 +173,18 @@ void getJobState(JobHandle job, JobState* state) {
 void waitForJob(JobHandle job) {
     JobContext *jobContext = (JobContext*) job;
     if (pthread_mutex_lock(&jobContext->waitMutex) != 0){
-		fprintf(stderr, "[[Barrier]] error on pthread_mutex_lock");
-		exit(1);
+        exitErr("error on pthread_mutex_lock");
 	}
     if (!jobContext->finished) {
         for (int threadId = 0; threadId < jobContext->multiThreadLevel; threadId++) {
-            pthread_join(*(jobContext->threads[threadId]), NULL);
+            if (pthread_join(*(jobContext->threads[threadId]), NULL) != 0) {
+                exitErr("error on pthread_join");
+            }
         }
         jobContext->finished = true;
     }
     if (pthread_mutex_unlock(&jobContext->waitMutex) != 0) {
-		fprintf(stderr, "[[Barrier]] error on pthread_mutex_unlock");
-		exit(1);
+		exitErr("error on pthread_mutex_unlock");
 	}
 }
 
